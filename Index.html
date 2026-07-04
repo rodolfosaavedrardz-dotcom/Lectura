@@ -63,20 +63,25 @@
 
     recognition.onresult = (event) => {
         let nuevoFragmento = '';
+        
+        // Solo procesamos los resultados que están marcados como 'isFinal'
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-            nuevoFragmento += event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                nuevoFragmento += event.results[i][0].transcript;
+            }
         }
         
-        // Aquí concatenamos correctamente usando +=
-        textoAcumulado += nuevoFragmento; 
-        
-        trans.innerText = "Dijiste: " + textoAcumulado;
-        
-        const mins = (new Date() - startTime) / 60000;
-        const palabras = textoAcumulado.trim().split(/\s+/).length;
-        
-        if(mins > 0.05) {
-            res.innerText = `Velocidad: ${Math.round(palabras / mins)} PPM`;
+        // Solo añadimos si realmente hay texto nuevo para evitar duplicados en blanco
+        if (nuevoFragmento.trim() !== "") {
+            textoAcumulado += nuevoFragmento + " "; 
+            trans.innerText = "Dijiste: " + textoAcumulado;
+            
+            const mins = (new Date() - startTime) / 60000;
+            const palabras = textoAcumulado.trim().split(/\s+/).length;
+            
+            if(mins > 0.1) {
+                res.innerText = `Velocidad: ${Math.round(palabras / mins)} PPM`;
+            }
         }
     };
 
