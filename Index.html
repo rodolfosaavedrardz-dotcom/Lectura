@@ -61,6 +61,10 @@
         } else {
             recognition.stop();
             isRecording = false;
+            // Libera el Wake Lock al terminar
+            if (wakeLock !== null) {
+                wakeLock.release().then(() => wakeLock = null);
+            }
             btn.innerText = "🎙️ Iniciar Lectura";
             btn.style.background = "#28a745";
         }
@@ -90,6 +94,20 @@
             recognition.start(); 
         }
     };
+    
+    // Activar Wake Lock para mantener la pantalla encendida
+if ('wakeLock' in navigator) {
+    let wakeLock = null;
+    btn.addEventListener('click', async () => {
+        if (!isRecording) { // Solo pedir al iniciar
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+            } catch (err) {
+                console.log(`${err.name}, ${err.message}`);
+            }
+        }
+    });
+}
 </script>
 </body>
 </html>
