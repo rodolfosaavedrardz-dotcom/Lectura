@@ -42,10 +42,12 @@
 
     let startTime, isRecording = false;
     let textoAcumulado = "";
+    let ultimoIndiceProcesado = -1; // Control para evitar duplicados
 
     btn.onclick = () => {
         if (!isRecording) {
             textoAcumulado = ""; 
+            ultimoIndiceProcesado = -1; // Reseteamos el control de índices
             trans.innerText = "...";
             res.innerText = "Velocidad: 0 PPM";
             startTime = new Date();
@@ -64,14 +66,15 @@
     recognition.onresult = (event) => {
         let nuevoFragmento = '';
         
-        // Solo procesamos los resultados que están marcados como 'isFinal'
+        // Iteramos los resultados y filtramos usando el índice
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
+            // Solo procesamos resultados finales que no hayamos visto antes
+            if (event.results[i].isFinal && i > ultimoIndiceProcesado) {
                 nuevoFragmento += event.results[i][0].transcript;
+                ultimoIndiceProcesado = i; // Actualizamos el último índice procesado
             }
         }
         
-        // Solo actualizamos si hay texto nuevo
         if (nuevoFragmento.trim() !== "") {
             textoAcumulado += nuevoFragmento + " "; 
             trans.innerText = "Dijiste: " + textoAcumulado;
