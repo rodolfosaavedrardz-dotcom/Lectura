@@ -41,11 +41,13 @@
     recognition.interimResults = true;
 
     let startTime, isRecording = false;
-    let textoAcumulado = ""; // <--- ESTA ES LA CLAVE: variable persistente
+    let textoAcumulado = ""; // Declarada una sola vez
 
     btn.onclick = () => {
         if (!isRecording) {
-            textoAcumulado = ""; // Reiniciar historial al empezar
+            textoAcumulado = ""; 
+            trans.innerText = "...";
+            res.innerText = "Velocidad: 0 PPM";
             startTime = new Date();
             recognition.start();
             isRecording = true;
@@ -59,24 +61,21 @@
         }
     };
 
-    // Variable global para acumular todo lo dicho en la sesión
-    let textoAcumulado = ""; 
-
     recognition.onresult = (event) => {
-        let nuevosResultados = '';
+        let nuevoFragmento = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-            nuevosResultados += event.results[i][0].transcript;
+            nuevoFragmento += event.results[i][0].transcript;
         }
         
-        // AQUÍ ESTÁ EL CAMBIO: Sumamos lo nuevo a lo que ya teníamos antes
-        textoAcumulado += nuevosResultados; 
+        // Aquí concatenamos correctamente usando +=
+        textoAcumulado += nuevoFragmento; 
         
         trans.innerText = "Dijiste: " + textoAcumulado;
         
         const mins = (new Date() - startTime) / 60000;
         const palabras = textoAcumulado.trim().split(/\s+/).length;
         
-        if(mins > 0.1) {
+        if(mins > 0.05) {
             res.innerText = `Velocidad: ${Math.round(palabras / mins)} PPM`;
         }
     };
