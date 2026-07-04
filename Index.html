@@ -41,7 +41,7 @@
     recognition.interimResults = true;
 
     let startTime, isRecording = false;
-    let textoAcumulado = ""; // Declarada una sola vez
+    let textoAcumulado = "";
 
     btn.onclick = () => {
         if (!isRecording) {
@@ -71,7 +71,7 @@
             }
         }
         
-        // Solo añadimos si realmente hay texto nuevo para evitar duplicados en blanco
+        // Solo actualizamos si hay texto nuevo
         if (nuevoFragmento.trim() !== "") {
             textoAcumulado += nuevoFragmento + " "; 
             trans.innerText = "Dijiste: " + textoAcumulado;
@@ -79,14 +79,16 @@
             const mins = (new Date() - startTime) / 60000;
             const palabras = textoAcumulado.trim().split(/\s+/).length;
             
-            if(mins > 0.1) {
+            if(mins > 0.05) {
                 res.innerText = `Velocidad: ${Math.round(palabras / mins)} PPM`;
             }
         }
     };
 
     recognition.onend = () => {
-        if (isRecording) recognition.start(); 
+        if (isRecording) {
+            recognition.start(); 
+        }
     };
 </script>
 </body>
