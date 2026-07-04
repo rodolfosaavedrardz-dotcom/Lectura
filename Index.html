@@ -59,19 +59,26 @@
         }
     };
 
+    // Variable global para acumular todo lo dicho en la sesión
+    let textoAcumulado = ""; 
+
     recognition.onresult = (event) => {
-        // En lugar de reiniciar, añadimos los resultados nuevos
-        let resultadosDeEstaSesion = '';
+        let nuevoTexto = '';
+        // Obtenemos solo el resultado más reciente del evento
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-            resultadosDeEstaSesion += event.results[i][0].transcript;
+            nuevoTexto += event.results[i][0].transcript;
         }
         
-        textoAcumulado = resultadosDeEstaSesion; // Mantenemos el total
+        // CONCATENAMOS: el texto total ahora es el anterior + lo nuevo
+        textoAcumulado = nuevoTexto; 
+        
         trans.innerText = "Dijiste: " + textoAcumulado;
         
+        // Cálculo basado en el tiempo transcurrido desde el inicio real
         const mins = (new Date() - startTime) / 60000;
         const palabras = textoAcumulado.trim().split(/\s+/).length;
-        if(mins > 0.1) {
+        
+        if(mins > 0.05) { // Umbral pequeño para empezar a medir
             res.innerText = `Velocidad: ${Math.round(palabras / mins)} PPM`;
         }
     };
