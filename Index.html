@@ -38,16 +38,14 @@
     let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = 'es-ES';
     recognition.continuous = true;
-    recognition.interimResults = true;
+    recognition.interimResults = false; // CAMBIO CLAVE: Solo resultados finales
 
     let startTime, isRecording = false;
     let textoAcumulado = "";
-    let ultimaFraseProcesada = ""; // Filtro extra para evitar repeticiones
 
     btn.onclick = () => {
         if (!isRecording) {
             textoAcumulado = "";
-            ultimaFraseProcesada = "";
             trans.innerText = "...";
             res.innerText = "Velocidad: 0 PPM";
             startTime = new Date();
@@ -64,21 +62,13 @@
     };
 
     recognition.onresult = (event) => {
-        let nuevoFragmento = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-                let frase = event.results[i][0].transcript.trim();
-                
-                // FILTRO MAESTRO: Solo agregamos si la frase es distinta a la última que procesamos
-                if (frase !== ultimaFraseProcesada && frase !== "") {
-                    nuevoFragmento += frase + " ";
-                    ultimaFraseProcesada = frase;
-                }
-            }
-        }
-        
-        if (nuevoFragmento !== "") {
-            textoAcumulado += nuevoFragmento;
+        // Obtenemos solo el último resultado disponible
+        const resultIndex = event.results.length - 1;
+        const transcript = event.results[resultIndex][0].transcript;
+
+        // Solo procesamos si el resultado es final
+        if (event.results[resultIndex].isFinal) {
+            textoAcumulado += transcript + " ";
             trans.innerText = "Dijiste: " + textoAcumulado;
             
             const mins = (new Date() - startTime) / 60000;
