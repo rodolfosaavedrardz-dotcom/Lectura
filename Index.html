@@ -63,22 +63,20 @@
     let textoAcumulado = ""; 
 
     recognition.onresult = (event) => {
-        let nuevoTexto = '';
-        // Obtenemos solo el resultado más reciente del evento
+        let nuevosResultados = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-            nuevoTexto += event.results[i][0].transcript;
+            nuevosResultados += event.results[i][0].transcript;
         }
         
-        // CONCATENAMOS: el texto total ahora es el anterior + lo nuevo
-        textoAcumulado = nuevoTexto; 
+        // AQUÍ ESTÁ EL CAMBIO: Sumamos lo nuevo a lo que ya teníamos antes
+        textoAcumulado += nuevosResultados; 
         
         trans.innerText = "Dijiste: " + textoAcumulado;
         
-        // Cálculo basado en el tiempo transcurrido desde el inicio real
         const mins = (new Date() - startTime) / 60000;
         const palabras = textoAcumulado.trim().split(/\s+/).length;
         
-        if(mins > 0.05) { // Umbral pequeño para empezar a medir
+        if(mins > 0.1) {
             res.innerText = `Velocidad: ${Math.round(palabras / mins)} PPM`;
         }
     };
