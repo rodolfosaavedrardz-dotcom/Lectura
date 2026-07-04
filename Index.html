@@ -42,12 +42,12 @@
 
     let startTime, isRecording = false;
     let textoAcumulado = "";
-    let ultimoIndiceProcesado = -1; // Control para evitar duplicados
+    let ultimaFraseProcesada = ""; // Filtro extra para evitar repeticiones
 
     btn.onclick = () => {
         if (!isRecording) {
-            textoAcumulado = ""; 
-            ultimoIndiceProcesado = -1; // Reseteamos el control de índices
+            textoAcumulado = "";
+            ultimaFraseProcesada = "";
             trans.innerText = "...";
             res.innerText = "Velocidad: 0 PPM";
             startTime = new Date();
@@ -65,18 +65,20 @@
 
     recognition.onresult = (event) => {
         let nuevoFragmento = '';
-        
-        // Iteramos los resultados y filtramos usando el índice
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-            // Solo procesamos resultados finales que no hayamos visto antes
-            if (event.results[i].isFinal && i > ultimoIndiceProcesado) {
-                nuevoFragmento += event.results[i][0].transcript;
-                ultimoIndiceProcesado = i; // Actualizamos el último índice procesado
+            if (event.results[i].isFinal) {
+                let frase = event.results[i][0].transcript.trim();
+                
+                // FILTRO MAESTRO: Solo agregamos si la frase es distinta a la última que procesamos
+                if (frase !== ultimaFraseProcesada && frase !== "") {
+                    nuevoFragmento += frase + " ";
+                    ultimaFraseProcesada = frase;
+                }
             }
         }
         
-        if (nuevoFragmento.trim() !== "") {
-            textoAcumulado += nuevoFragmento + " "; 
+        if (nuevoFragmento !== "") {
+            textoAcumulado += nuevoFragmento;
             trans.innerText = "Dijiste: " + textoAcumulado;
             
             const mins = (new Date() - startTime) / 60000;
