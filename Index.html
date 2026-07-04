@@ -41,13 +41,15 @@
     recognition.interimResults = true;
 
     let startTime, isRecording = false;
+    let textoAcumulado = ""; // <--- ESTA ES LA CLAVE: variable persistente
 
     btn.onclick = () => {
         if (!isRecording) {
+            textoAcumulado = ""; // Reiniciar historial al empezar
             startTime = new Date();
             recognition.start();
             isRecording = true;
-            btn.innerText = "⏹️ Terminar y Ver Resultado";
+            btn.innerText = "⏹️ Terminar";
             btn.style.background = "#dc3545";
         } else {
             recognition.stop();
@@ -58,21 +60,22 @@
     };
 
     recognition.onresult = (event) => {
-        let final = '';
+        // En lugar de reiniciar, añadimos los resultados nuevos
+        let resultadosDeEstaSesion = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-            final += event.results[i][0].transcript;
+            resultadosDeEstaSesion += event.results[i][0].transcript;
         }
-        trans.innerText = "Dijiste: " + final;
         
-        // Cálculo de PPM (solo si el tiempo es mayor a 0)
+        textoAcumulado = resultadosDeEstaSesion; // Mantenemos el total
+        trans.innerText = "Dijiste: " + textoAcumulado;
+        
         const mins = (new Date() - startTime) / 60000;
-        const palabras = final.trim().split(/\s+/).length;
-        if(mins > 0.1) { // Evita cálculos absurdos al inicio
+        const palabras = textoAcumulado.trim().split(/\s+/).length;
+        if(mins > 0.1) {
             res.innerText = `Velocidad: ${Math.round(palabras / mins)} PPM`;
         }
     };
 
-    // Esto intenta reiniciar si se apaga por error
     recognition.onend = () => {
         if (isRecording) recognition.start(); 
     };
