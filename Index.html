@@ -5,84 +5,79 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Entrenador de Lectura</title>
     <style>
-        body { font-family: sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        body { font-family: sans-serif; background: #f4f4f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 90%; max-width: 500px; text-align: center; }
-        #visualizador { width: 100%; height: 80px; background: #eee; border-radius: 10px; margin: 10px 0; }
-        #cuento { font-size: 1.2rem; margin: 15px 0; padding: 10px; text-align: left; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; }
-        button { width: 100%; padding: 20px; font-size: 1.3rem; border: none; border-radius: 15px; background: #007bff; color: white; font-weight: bold; }
-        button.recording { background: #dc3545; }
-        #resultado { font-size: 1.4rem; color: #28a745; margin-top: 15px; font-weight: bold; }
+        #cuento { font-size: 1.3rem; margin: 15px 0; padding: 15px; border: 2px solid #007bff; border-radius: 10px; text-align: left; }
+        button { width: 100%; padding: 20px; font-size: 1.3rem; border: none; border-radius: 15px; background: #28a745; color: white; }
+        #transcripcion { font-size: 1rem; color: #555; font-style: italic; margin-top: 10px; min-height: 50px; }
+        #resultado { font-size: 1.5rem; color: #007bff; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
+<!-- Contenedor del enlace para que quede bien alineado -->
+<div style="text-align: center; margin-bottom: 20px; padding-top: 10px;">
+    <a href="https://script.google.com/macros/s/AKfycbwLLz6Q__aMNRNKaIdyj0StXZ38XGVXwvOZJrHs2JloyiKAL3Rp1070cVgaLtgwk_HvFA/exec?page=Menu" target="_top" style="text-decoration: none; color: #007bff; font-weight: bold; font-size: 1.1rem;">
+        ← Volver al Menú
+    </a>
+</div>
+
 <div class="card">
     <h3>Práctica de Lectura</h3>
-    <canvas id="visualizador"></canvas>
     <div id="cuento">Había una vez un pequeño conejo que vivía en un jardín lleno de zanahorias brillantes. Todas las mañanas, saltaba muy alegre buscando a sus amigos para jugar bajo el sol.</div>
     <button id="btnGrabar">🎙️ Iniciar Lectura</button>
-    <div id="resultado"></div>
+    <div id="transcripcion">...</div>
+    <div id="resultado">Velocidad: 0 PPM</div>
 </div>
 
 <script>
     const btn = document.getElementById('btnGrabar');
     const res = document.getElementById('resultado');
-    const canvas = document.getElementById('visualizador');
-    const ctx = canvas.getContext('2d');
+    const trans = document.getElementById('transcripcion');
     
     let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = 'es-ES';
     recognition.continuous = true;
     recognition.interimResults = true;
 
-    let startTime, audioContext, analyser, dataArray, animationId;
+    let startTime, isRecording = false;
 
-    btn.onclick = async () => {
-        if (btn.innerText.includes("Iniciar")) {
-            // Iniciar Audio Visualizer
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            audioContext = new AudioContext();
-            const source = audioContext.createMediaStreamSource(stream);
-            analyser = audioContext.createAnalyser();
-            source.connect(analyser);
-            analyser.fftSize = 256;
-            dataArray = new Uint8Array(analyser.frequencyBinCount);
-            dibujar();
-            
-            // Iniciar Reconocimiento
+    btn.onclick = () => {
+        if (!isRecording) {
             startTime = new Date();
             recognition.start();
-            btn.innerText = "⏹️ Detener";
-            btn.classList.add('recording');
+            isRecording = true;
+            btn.innerText = "⏹️ Terminar y Ver Resultado";
+            btn.style.background = "#dc3545";
         } else {
-            // Detener todo
             recognition.stop();
-            cancelAnimationFrame(animationId);
+            isRecording = false;
             btn.innerText = "🎙️ Iniciar Lectura";
-            btn.classList.remove('recording');
+            btn.style.background = "#28a745";
         }
     };
 
-    function dibujar() {
-        animationId = requestAnimationFrame(dibujar);
-        analyser.getByteFrequencyData(dataArray);
-        ctx.fillStyle = '#eee'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        for(let i = 0; i < dataArray.length; i++) {
-            let h = dataArray[i] / 2;
-            ctx.fillStyle = '#007bff';
-            ctx.fillRect(i * 3, canvas.height - h, 2, h);
-        }
-    }
-
     recognition.onresult = (event) => {
-        let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) transcript += event.results[i][0].transcript;
+        let final = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            final += event.results[i][0].transcript;
+        }
+        trans.innerText = "Dijiste: " + final;
+        
+        // Cálculo de PPM (solo si el tiempo es mayor a 0)
         const mins = (new Date() - startTime) / 60000;
-        const ppm = Math.round(transcript.trim().split(/\s+/).length / mins);
-        res.innerText = `Velocidad: ${ppm} PPM`;
+        const palabras = final.trim().split(/\s+/).length;
+        if(mins > 0.1) { // Evita cálculos absurdos al inicio
+            res.innerText = `Velocidad: ${Math.round(palabras / mins)} PPM`;
+        }
+    };
+
+    // Esto intenta reiniciar si se apaga por error
+    recognition.onend = () => {
+        if (isRecording) recognition.start(); 
     };
 </script>
 </body>
